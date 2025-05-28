@@ -34,7 +34,7 @@
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        const map = L.map('map').setView([36.5, 127.8], 7);
+        const map = L.map('map').setView([36.3, 127.8], 7);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
         let polyline;
 
@@ -70,7 +70,7 @@
                 map.fitBounds(polyline.getBounds());
 
             } catch (err) {
-                output.textContent = "⚠️ 서버 요청 중 오류 발생: " + err;
+                output.textContent = "⚠️ 서버 오류: " + err;
             }
         }
     </script>
