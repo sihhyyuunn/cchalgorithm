@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+/from flask import Flask, render_template, request, jsonify
 import pandas as pd
 import networkx as nx
 import numpy as np
@@ -9,7 +9,7 @@ import pickle
 app = Flask(__name__, template_folder="templates")
 
 # =========================
-# Excel로부터 그래프 로딩
+# 엑셀에서 그래프 생성
 # =========================
 def load_graph_from_excel(path="input.xlsx"):
     df = pd.read_excel(path)
@@ -18,23 +18,19 @@ def load_graph_from_excel(path="input.xlsx"):
     df['종료노드ID'] = df['종료노드ID'].astype(str)
 
     G = nx.DiGraph()
-    node_index = {node: idx for idx, node in enumerate(sorted(set(df['시작노드ID']).union(set(df['종료노드ID']))))}
-    reverse_index = {idx: node for node, idx in node_index.items()}
-
     for _, row in df.iterrows():
         u, v = row['시작노드ID'], row['종료노드ID']
         weight = row['교통량']
-        uid, vid = node_index[u], node_index[v]
-        if G.has_edge(uid, vid):
-            G[uid][vid]['weight'] += weight
-            G[uid][vid]['count'] += 1
+        if G.has_edge(u, v):
+            G[u][v]['weight'] += weight
+            G[u][v]['count'] += 1
         else:
-            G.add_edge(uid, vid, weight=weight, count=1)
+            G.add_edge(u, v, weight=weight, count=1)
 
     for u, v, data in G.edges(data=True):
         data['weight'] = data['weight'] / data['count']
 
-    return G, node_index, reverse_index
+    return G
 
 # =========================
 # pickle 저장 및 불러오기
@@ -72,23 +68,21 @@ class ACO_CCH:
         self.iterations = iterations
         self.node_list = list(self.graph.nodes)
         self.index_map = {node: idx for idx, node in enumerate(self.node_list)}
-        self.reverse_map = {idx: node for node, idx in self.index_map.items()}
         self.pheromone = np.ones((len(self.node_list), len(self.node_list)))
 
     def heuristic(self, u, v):
         if self.graph.has_edge(u, v):
             return 1.0 / (self.graph[u][v]['weight'] + 1e-5)
-        else:
-            return 1e-5
+        return 1e-5
 
     def update_pheromone(self, solutions):
         self.pheromone *= (1 - self.evaporation)
         for solution, cost in solutions:
-            pheromone_deposit = 1.0 / (cost + 1e-5)
+            deposit = 1.0 / (cost + 1e-5)
             for i in range(len(solution) - 1):
                 u_idx = self.index_map[solution[i]]
                 v_idx = self.index_map[solution[i + 1]]
-                self.pheromone[u_idx][v_idx] += pheromone_deposit
+                self.pheromone[u_idx][v_idx] += deposit
 
     def construct_solution(self):
         nodes = self.node_list.copy()
@@ -96,19 +90,19 @@ class ACO_CCH:
         solution = [nodes.pop(0)]
         while nodes:
             current = solution[-1]
-            probabilities = []
+            probs = []
             total = 0
             for node in nodes:
                 u_idx = self.index_map[current]
                 v_idx = self.index_map[node]
                 tau = self.pheromone[u_idx][v_idx] ** self.alpha
                 eta = self.heuristic(current, node) ** self.beta
-                weight = tau * eta
-                probabilities.append(weight)
-                total += weight
-            probabilities = np.array(probabilities)
-            probabilities = probabilities / total if total > 0 else np.ones(len(nodes)) / len(nodes)
-            next_node = np.random.choice(nodes, p=probabilities)
+                w = tau * eta
+                probs.append(w)
+                total += w
+            probs = np.array(probs)
+            probs = probs / total if total > 0 else np.ones(len(nodes)) / len(nodes)
+            next_node = np.random.choice(nodes, p=probs)
             solution.append(next_node)
             nodes.remove(next_node)
         return solution
@@ -136,7 +130,7 @@ class ACO_CCH:
         return best_order
 
 # =========================
-# CCH 최적화
+# CCH 구조 최적화
 # =========================
 class CCH:
     def __init__(self, graph):
@@ -176,10 +170,10 @@ class CCH:
         return nx.bidirectional_dijkstra(self.customized_graph, source, target, weight='weight')
 
 # =========================
-# 초기화 및 실행
+# 초기화 실행
 # =========================
 if is_input_updated():
-    G, node_index, reverse_index = load_graph_from_excel()
+    G = load_graph_from_excel()
     aco = ACO_CCH(G)
     order = aco.optimize_order()
     cch = CCH(G)
@@ -189,13 +183,14 @@ if is_input_updated():
     save_preprocessed(G, order, cch.shortcuts)
 else:
     G, order, shortcuts = load_preprocessed()
-    node_index = {str(n): n for n in G.nodes}
-    reverse_index = {v: k for k, v in node_index.items()}
     cch = CCH(G)
     cch.set_order(order)
     cch.shortcuts = shortcuts
     cch.customize()
 
+# =========================
+# Flask API
+# =========================
 @app.route('/')
 def index():
     return render_template("index.html")
@@ -203,22 +198,19 @@ def index():
 @app.route('/route', methods=['POST'])
 def get_route():
     data = request.get_json()
-    start_id = data.get("start")
-    end_id = data.get("end")
+    start_id = str(data.get("start"))
+    end_id = str(data.get("end"))
 
-    if start_id not in node_index or end_id not in node_index:
-        return jsonify({"error": "입력한 콘존ID가 그래프에 없습니다."}), 400
+    if start_id not in G.nodes or end_id not in G.nodes:
+        return jsonify({"error": f"입력한 노드ID가 그래프에 없습니다: {start_id} 또는 {end_id}"}), 400
 
     try:
-        src = node_index[start_id]
-        dst = node_index[end_id]
-        path_nodes, path_length = cch.query(src, dst)
-        path_ids = [reverse_index[n] for n in path_nodes]
+        path_nodes, path_length = cch.query(start_id, end_id)
         return jsonify({
             "start": start_id,
             "end": end_id,
             "length": path_length,
-            "path": path_ids
+            "path": path_nodes
         })
     except Exception as e:
         return jsonify({"error": f"서버 오류: {str(e)}"}), 500
