@@ -1,19 +1,30 @@
 from flask import Flask, render_template, request, jsonify
 import pandas as pd
 import networkx as nx
-import numpy as np
-import random
-import os
 import pickle
 import json
+import os
 
 app = Flask(__name__, template_folder="templates")
 
 # =========================
-# 위치 데이터 로드 (콘존명 → 위경도)
+# 위치 좌표 로딩 함수
 # =========================
-with open("locationinfoIc.json", "r", encoding="utf-8") as f:
-    location_map = {entry["name"]: (entry["y"], entry["x"]) for entry in json.load(f)}
+def load_coords_from_json(path="locationinfoIc.json"):
+    with open(path, "r", encoding="utf-8") as f:
+        raw_data = json.load(f)
+        coords = {}
+        for item in raw_data.values():
+            try:
+                name = item["http://data.ex.co.kr:80/link/def/icName"][0]["value"]
+                y = float(item["http://data.ex.co.kr:80/link/def/yValue"][0]["value"])
+                x = float(item["http://data.ex.co.kr:80/link/def/xValue"][0]["value"])
+                coords[name] = (y, x)
+            except Exception:
+                continue
+        return coords
+
+node_coords = load_coords_from_json()
 
 # =========================
 # pickle 불러오기
@@ -27,7 +38,7 @@ def load_preprocessed():
 G, order, shortcuts = load_preprocessed()
 
 # =========================
-# CCH 클래스 정의
+# CCH 구조 정의 및 로딩
 # =========================
 class CCH:
     def __init__(self, graph):
@@ -71,6 +82,9 @@ cch.set_order(order)
 cch.shortcuts = shortcuts
 cch.customize()
 
+# =========================
+# Flask 라우팅
+# =========================
 @app.route('/')
 def index():
     return render_template("index.html")
@@ -86,7 +100,7 @@ def get_route():
 
     try:
         path_nodes, path_length = cch.query(start_id, end_id)
-        coords = [location_map.get(n, [0, 0]) for n in path_nodes]
+        coords = [node_coords.get(n, (0, 0)) for n in path_nodes]
         return jsonify({
             "start": start_id,
             "end": end_id,
