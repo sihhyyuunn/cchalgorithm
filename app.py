@@ -101,14 +101,6 @@ def get_route():
     start_id = str(data.get("start")).strip()
     end_id = str(data.get("end")).strip()
 
-    # 🔍 디버깅 출력 추가
-    print("📌 요청된 콘존명:")
-    print("  시작ID:", repr(start_id))
-    print("  종료ID:", repr(end_id))
-    print("📦 현재 그래프에 포함된 노드 수:", len(G.nodes))
-    sample_nodes = list(G.nodes)[:20]
-    print("🔎 그래프에 있는 일부 노드 예시:", sample_nodes)
-
     if start_id not in G.nodes or end_id not in G.nodes:
         return jsonify({"error": f"입력한 콘존명이 그래프에 없습니다: {start_id} 또는 {end_id}"}), 400
 
