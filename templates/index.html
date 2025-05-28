@@ -14,8 +14,8 @@
 <body>
     <h2>CCH 기반 도로 경로 탐색기</h2>
     <p>
-        출발 콘존ID: <input type="text" id="startID" />
-        도착 콘존ID: <input type="text" id="endID" />
+        출발 노드ID: <input type="text" id="startID" />
+        도착 노드ID: <input type="text" id="endID" />
         <button onclick="getRoute()">경로 탐색</button>
     </p>
     <p id="output"></p>
@@ -23,7 +23,7 @@
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        const map = L.map('map').setView([35.1796, 129.0756], 11);
+        const map = L.map('map').setView([36.5, 127.5], 7);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
         let polyline;
 
@@ -48,9 +48,8 @@
             output.textContent = `🚗 ${data.start} → ${data.end} : ${data.length.toFixed(2)} 거리`;
 
             if (polyline) map.removeLayer(polyline);
-            if (data.path) {
-                const coords = data.path.map(_ => [35.0, 129.0]); // 예시 좌표로 처리
-                polyline = L.polyline(coords, { color: 'blue' }).addTo(map);
+            if (data.coordinates) {
+                polyline = L.polyline(data.coordinates, { color: 'blue' }).addTo(map);
                 map.fitBounds(polyline.getBounds());
             }
         }
