@@ -28,7 +28,9 @@ def load_graph_from_excel(path="input.xlsx"):
             G.add_edge(u, v, weight=weight, count=1)
 
     for u, v, data in G.edges(data=True):
-        data['weight'] = data['weight'] / data['count']
+        avg_weight = data['weight'] / data['count']
+        data['weight'] = max(avg_weight, 1e-3)  # 최소값 보장
+
 
     return G
 
