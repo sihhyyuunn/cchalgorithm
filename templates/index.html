@@ -54,6 +54,7 @@
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ start, end })
                 });
+
                 const data = await res.json();
 
                 if (data.error) {
@@ -70,7 +71,7 @@
                 map.fitBounds(polyline.getBounds());
 
             } catch (err) {
-                output.textContent = "⚠️ 서버 오류: " + err;
+                output.textContent = "⚠️ 서버 요청 중 오류 발생: " + err;
             }
         }
     </script>
