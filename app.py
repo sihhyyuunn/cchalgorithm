@@ -92,8 +92,8 @@ def index():
 @app.route('/route', methods=['POST'])
 def get_route():
     data = request.get_json()
-    start_id = str(data.get("start"))
-    end_id = str(data.get("end"))
+    start_id = str(data.get("start")).strip()
+    end_id = str(data.get("end")).strip()
 
     if start_id not in G.nodes or end_id not in G.nodes:
         return jsonify({"error": f"입력한 콘존명이 그래프에 없습니다: {start_id} 또는 {end_id}"}), 400
