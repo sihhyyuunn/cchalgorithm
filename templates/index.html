@@ -57,22 +57,20 @@
                 const data = await res.json();
 
                 if (data.error) {
-                    output.textContent =  data.error;
+                    output.textContent = "🚫 " + data.error;
                     return;
                 }
 
                 output.textContent = `${data.start} → ${data.end} (총 거리: ${data.length.toFixed(2)})`;
 
-                // 지도에서 이전 경로 제거
                 if (polyline) map.removeLayer(polyline);
 
-                // 새 경로 표시
                 const coords = data.coordinates.map(c => [c[0], c[1]]);
                 polyline = L.polyline(coords, { color: 'blue' }).addTo(map);
                 map.fitBounds(polyline.getBounds());
 
             } catch (err) {
-                output.textContent = "⚠️ 서버 요청 중 오류 발생: " + err;
+                output.textContent = "⚠️ 서버 오류 발생: " + err;
             }
         }
     </script>
