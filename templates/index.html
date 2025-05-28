@@ -2,58 +2,77 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>CCH 기반 경로 탐색기</title>
+    <title>도로 경로 탐색기</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
-        #map { height: 500px; width: 80%; margin: 20px auto; }
-        body { font-family: sans-serif; text-align: center; }
-        input { padding: 5px; margin: 5px; }
-        button { padding: 8px 16px; }
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        #map {
+            height: 600px;
+            width: 90%;
+            margin: 20px auto;
+        }
+        input, button {
+            padding: 8px;
+            margin: 5px;
+        }
     </style>
 </head>
 <body>
-    <h2>📍 CCH 기반 도로 경로 탐색기</h2>
+    <h2>🚗 경로 탐색기</h2>
     <p>
-        출발 노드ID: <input type="text" id="startID" />
-        도착 노드ID: <input type="text" id="endID" />
-        <button onclick="getRoute()">경로 탐색</button>
+        출발 ID: <input type="text" id="startID" placeholder="예: 구내IC" />
+        도착 ID: <input type="text" id="endID" placeholder="예: 남양주IC" />
+        <button onclick="getRoute()">경로 보기</button>
     </p>
     <p id="output"></p>
     <div id="map"></div>
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        const map = L.map('map').setView([36.5, 127.5], 7); // 중간 위치로 초기 설정
+        const map = L.map('map').setView([37.5, 127.5], 8);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
         let polyline;
 
         async function getRoute() {
-            const start = document.getElementById("startID").value;
-            const end = document.getElementById("endID").value;
-
-            const res = await fetch("/route", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ start, end })
-            });
-
-            const data = await res.json();
+            const start = document.getElementById("startID").value.trim();
+            const end = document.getElementById("endID").value.trim();
             const output = document.getElementById("output");
 
-            if (data.error) {
-                output.textContent = "❌ " + data.error;
-                if (polyline) map.removeLayer(polyline);
+            if (!start || !end) {
+                output.textContent = "❗ 출발지와 도착지를 입력해주세요.";
                 return;
             }
 
-            output.textContent = `🚗 ${data.start} → ${data.end} : ${data.length.toFixed(2)} 거리`;
+            try {
+                const res = await fetch("/route", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ start, end })
+                });
+                const data = await res.json();
 
-            if (polyline) map.removeLayer(polyline);
+                if (data.error) {
+                    output.textContent =  data.error;
+                    return;
+                }
 
-            if (data.coordinates) {
-                polyline = L.polyline(data.coordinates, { color: 'blue' }).addTo(map);
+                output.textContent = `${data.start} → ${data.end} (총 거리: ${data.length.toFixed(2)})`;
+
+                // 지도에서 이전 경로 제거
+                if (polyline) map.removeLayer(polyline);
+
+                // 새 경로 표시
+                const coords = data.coordinates.map(c => [c[0], c[1]]);
+                polyline = L.polyline(coords, { color: 'blue' }).addTo(map);
                 map.fitBounds(polyline.getBounds());
+
+            } catch (err) {
+                output.textContent = "⚠️ 서버 요청 중 오류 발생: " + err;
             }
         }
     </script>
