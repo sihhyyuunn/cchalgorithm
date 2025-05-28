@@ -95,6 +95,37 @@ def get_route():
     start_id = str(data.get("start")).strip()
     end_id = str(data.get("end")).strip()
 
+    @app.route('/route', methods=['POST'])
+def get_route():
+    data = request.get_json()
+    start_id = str(data.get("start")).strip()
+    end_id = str(data.get("end")).strip()
+
+    # 🔍 디버깅 출력 추가
+    print("📌 요청된 콘존명:")
+    print("  시작ID:", repr(start_id))
+    print("  종료ID:", repr(end_id))
+    print("📦 현재 그래프에 포함된 노드 수:", len(G.nodes))
+    sample_nodes = list(G.nodes)[:20]
+    print("🔎 그래프에 있는 일부 노드 예시:", sample_nodes)
+
+    if start_id not in G.nodes or end_id not in G.nodes:
+        return jsonify({"error": f"입력한 콘존명이 그래프에 없습니다: {start_id} 또는 {end_id}"}), 400
+
+    try:
+        path_nodes, path_length = cch.query(start_id, end_id)
+        coords = [location_map.get(n, [0, 0]) for n in path_nodes]
+        return jsonify({
+            "start": start_id,
+            "end": end_id,
+            "length": path_length,
+            "path": path_nodes,
+            "coordinates": coords
+        })
+    except Exception as e:
+        return jsonify({"error": f"서버 오류: {str(e)}"}), 500
+
+
     if start_id not in G.nodes or end_id not in G.nodes:
         return jsonify({"error": f"입력한 콘존명이 그래프에 없습니다: {start_id} 또는 {end_id}"}), 400
 
