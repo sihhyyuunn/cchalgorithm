@@ -1,4 +1,4 @@
-/from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify
 import pandas as pd
 import networkx as nx
 import numpy as np
@@ -29,10 +29,21 @@ def load_graph_from_excel(path="input.xlsx"):
 
     for u, v, data in G.edges(data=True):
         avg_weight = data['weight'] / data['count']
-        data['weight'] = max(avg_weight, 1e-3)  # 최소값 보장
-
+        data['weight'] = max(avg_weight, 1e-3)
 
     return G
+
+# =========================
+# 노드 좌표 랜덤 생성
+# =========================
+def generate_node_coords(nodes):
+    coords = {}
+    for node in nodes:
+        coords[node] = (
+            round(random.uniform(34.0, 38.0), 6),
+            round(random.uniform(126.0, 129.5), 6)
+        )
+    return coords
 
 # =========================
 # pickle 저장 및 불러오기
@@ -190,9 +201,8 @@ else:
     cch.shortcuts = shortcuts
     cch.customize()
 
-# =========================
-# Flask API
-# =========================
+node_coords = generate_node_coords(G.nodes)
+
 @app.route('/')
 def index():
     return render_template("index.html")
@@ -208,11 +218,13 @@ def get_route():
 
     try:
         path_nodes, path_length = cch.query(start_id, end_id)
+        coords = [node_coords[n] for n in path_nodes]
         return jsonify({
             "start": start_id,
             "end": end_id,
             "length": path_length,
-            "path": path_nodes
+            "path": path_nodes,
+            "coordinates": coords
         })
     except Exception as e:
         return jsonify({"error": f"서버 오류: {str(e)}"}), 500
