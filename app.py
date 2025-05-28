@@ -11,7 +11,17 @@ app = Flask(__name__, template_folder="templates")
 # 위치 정보 로딩
 # =====================
 with open("locationinfoIc.json", "r", encoding="utf-8") as f:
-    location_map = {entry["name"]: (entry["y"], entry["x"]) for entry in json.load(f)}
+    raw_data = json.load(f)
+    location_map = {}
+
+    for item in raw_data.values():
+        try:
+            name = item["http://data.ex.co.kr:80/link/def/icName"][0]["value"]
+            y = float(item["http://data.ex.co.kr:80/link/def/yValue"][0]["value"])
+            x = float(item["http://data.ex.co.kr:80/link/def/xValue"][0]["value"])
+            location_map[name] = (y, x)
+        except (KeyError, IndexError, ValueError):
+            continue  # 혹시 누락된 값이 있어도 무시
 
 # =====================
 # pickle 로딩
