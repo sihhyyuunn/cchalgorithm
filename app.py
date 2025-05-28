@@ -6,7 +6,7 @@ import random
 import os
 import pickle
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder="templates")
 
 # =========================
 # Excel로부터 그래프 로딩
