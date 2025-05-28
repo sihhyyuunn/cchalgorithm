@@ -23,7 +23,7 @@
     </style>
 </head>
 <body>
-    <h2>🚗 도로 경로 탐색기</h2>
+    <h2> 도로 경로 탐색기</h2>
     <p>
         출발지: <input type="text" id="startID" placeholder="예: 구서IC" />
         도착지: <input type="text" id="endID" placeholder="예: 영락IC" />
@@ -44,7 +44,7 @@
             const output = document.getElementById("output");
 
             if (!start || !end) {
-                output.textContent = "❗ 출발지와 도착지를 입력해주세요.";
+                output.textContent = "출발지와 도착지를 입력해주세요.";
                 return;
             }
 
@@ -58,7 +58,7 @@
                 const data = await res.json();
 
                 if (data.error) {
-                    output.textContent = "🚫 " + data.error;
+                    output.textContent = data.error;
                     return;
                 }
 
@@ -71,7 +71,7 @@
                 map.fitBounds(polyline.getBounds());
 
             } catch (err) {
-                output.textContent = "⚠️ 서버 요청 중 오류 발생: " + err;
+                output.textContent = "서버 요청 중 오류 발생: " + err;
             }
         }
     </script>
