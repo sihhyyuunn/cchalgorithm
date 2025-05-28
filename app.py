@@ -76,13 +76,8 @@ def get_route():
         path_nodes, path_length = cch.query(start_id, end_id)
 
         # ✅ 여기 수정
-        coords = []
-        for n in path_nodes:
-            val = location_map.get(n)
-            if isinstance(val, (list, tuple)) and len(val) == 2:
-                coords.append([val[0], val[1]])
-            else:
-                coords.append([0, 0])  # fallback 좌표
+        coords = [location_map.get(n, [0, 0]) for n in path_nodes]
+
 
         return jsonify({
             "start": start_id,
