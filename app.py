@@ -129,8 +129,6 @@ def load_graph_with_location(path="graph_with_location.pkl"):
     with open(path, "rb") as f:
         return pickle.load(f)
 
-G = load_graph_with_location()
-
 # ===================================
 # shortcuts 및 order 불러오기
 # ===================================
@@ -182,13 +180,14 @@ def get_route():
         path_nodes, path_length = cch.query(start_id, end_id)
 
         # 시작/도착지 좌표만 추출
-        coords = []
+       coords = []
         for node in [start_id, end_id]:
-            coord = location_map.get(node)
-            if isinstance(coord, (list, tuple)) and len(coord) == 2:
-                coords.append([float(coord[0]), float(coord[1])])
-            else:
-                print(f"[❗경고] '{node}'의 좌표 없음 또는 형식 오류 → 기본값 사용")
+            try:
+                lat = G.nodes[node]['lat']
+                lng = G.nodes[node]['lng']
+                coords.append([lat, lng])
+            except KeyError:
+                print(f"[❗경고] '{node}'의 위경도 정보 없음 → 기본값 사용")
                 coords.append([0.0, 0.0])
 
         return jsonify({
