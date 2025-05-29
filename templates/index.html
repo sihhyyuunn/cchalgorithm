@@ -23,87 +23,6 @@
     </style>
 </head>
 <body>
-    <h2> 도로 경로 탐색기</h2>
-    <p>
-        출발지: <input type="text" id="startID" placeholder="예: 구서IC" />
-        도착지: <input type="text" id="endID" placeholder="예: 영락IC" />
-        <button onclick="getRoute()">경로 보기</button>
-    </p>
-    <p id="output"></p>
-    <div id="map"></div>
-
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script>
-        const map = L.map('map').setView([36.3, 127.8], 7);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-        let polyline;
-
-        async function getRoute() {
-            const start = document.getElementById("startID").value.trim();
-            const end = document.getElementById("endID").value.trim();
-            const output = document.getElementById("output");
-
-            if (!start || !end) {
-                output.textContent = "출발지와 도착지를 입력해주세요.";
-                return;
-            }
-
-            try {
-                const res = await fetch("/route", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ start, end })
-                });
-
-                const data = await res.json();
-
-                if (data.error) {
-                    output.textContent = data.error;
-                    return;
-                }
-
-                output.textContent = `${data.start} → ${data.end} (총 거리: ${data.length.toFixed(2)})`;
-
-                if (polyline) map.removeLayer(polyline);
-
-                const coords = data.coordinates.map(c => [c[0], c[1]]);
-                polyline = L.polyline(coords, { color: 'blue' }).addTo(map);
-                map.fitBounds(polyline.getBounds());
-
-            } catch (err) {
-                output.textContent = "서버 요청 중 오류 발생: " + err;
-            }
-        }
-    </script>
-</body>
-</html>
- -->
-
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <title>도로 경로 탐색기</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <style>
-        body {
-            font-family: sans-serif;
-            text-align: center;
-            margin: 0;
-            padding: 0;
-        }
-        #map {
-            height: 600px;
-            width: 90%;
-            margin: 20px auto;
-        }
-        input, button {
-            padding: 8px;
-            margin: 5px;
-        }
-    </style>
-</head>
-<body>
     <h2>🚗 도로 경로 탐색기</h2>
     <p>
         출발지: <input type="text" id="startID" placeholder="예: 구서IC" />
@@ -160,6 +79,89 @@
             } catch (err) {
                 output.textContent = "⚠️ 서버 요청 중 오류 발생: " + err;
                 console.error(err);
+            }
+        }
+    </script>
+</body>
+</html>
+ -->
+
+ <!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>🚗 도로 경로 탐색기</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        #map {
+            height: 600px;
+            width: 90%;
+            margin: 20px auto;
+        }
+        input, button {
+            padding: 8px;
+            margin: 5px;
+            font-size: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <h2>🚗 도로 경로 탐색기</h2>
+    <p>
+        출발지: <input type="text" id="startID" placeholder="예: 장수IC" />
+        도착지: <input type="text" id="endID" placeholder="예: 중동IC" />
+        <button onclick="getRoute()">경로 보기</button>
+    </p>
+    <p id="output" style="color: #444; font-weight: bold;"></p>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        const map = L.map('map').setView([36.3, 127.8], 7);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        let polyline;
+
+        async function getRoute() {
+            const start = document.getElementById("startID").value.trim();
+            const end = document.getElementById("endID").value.trim();
+            const output = document.getElementById("output");
+
+            output.textContent = "";
+
+            if (!start || !end) {
+                output.textContent = "❗ 출발지와 도착지를 모두 입력해주세요.";
+                return;
+            }
+
+            try {
+                const res = await fetch("/route", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ start, end })
+                });
+
+                const data = await res.json();
+
+                if (data.error) {
+                    output.textContent = "🚫 " + data.error;
+                    return;
+                }
+
+                output.textContent = `${data.start} → ${data.end} (총 거리: ${data.length.toFixed(2)} 단위)`;  // 단위: m 또는 km 필요시 추가
+
+                if (polyline) map.removeLayer(polyline);
+                const coords = data.coordinates.map(c => [c[0], c[1]]);
+                polyline = L.polyline(coords, { color: 'blue' }).addTo(map);
+                map.fitBounds(polyline.getBounds());
+
+            } catch (err) {
+                output.textContent = "⚠️ 서버 요청 중 오류 발생: " + err;
             }
         }
     </script>
