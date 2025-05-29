@@ -168,6 +168,7 @@ def index():
     return render_template("index.html")
 
 @app.route('/route', methods=['POST'])
+@app.route('/route', methods=['POST'])
 def get_route():
     data = request.get_json()
     start_id = str(data.get("start")).strip()
@@ -177,27 +178,30 @@ def get_route():
         return jsonify({"error": f"입력한 콘존명이 그래프에 없습니다: {start_id} 또는 {end_id}"}), 400
 
     try:
+        # 경로 계산
         path_nodes, path_length = cch.query(start_id, end_id)
 
-        # ✅ 좌표는 G.nodes[n]['location'] 에서 직접 추출
+        # 시작/도착지 좌표만 추출
         coords = []
-        for n in path_nodes:
-            coord = G.nodes[n].get('location')
+        for node in [start_id, end_id]:
+            coord = location_map.get(node)
             if isinstance(coord, (list, tuple)) and len(coord) == 2:
                 coords.append([float(coord[0]), float(coord[1])])
             else:
-                coords.append([0.0, 0.0])  # fallback
+                print(f"[❗경고] '{node}'의 좌표 없음 또는 형식 오류 → 기본값 사용")
+                coords.append([0.0, 0.0])
 
         return jsonify({
             "start": start_id,
             "end": end_id,
             "length": path_length,
-            "path": path_nodes,
-            "coordinates": coords
+            "path": [start_id, end_id],  # 실제 경로는 생략
+            "coordinates": coords        # 지도에는 시작-도착만 그림
         })
 
     except Exception as e:
         return jsonify({"error": f"서버 오류: {str(e)}"}), 500
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
