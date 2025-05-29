@@ -177,7 +177,7 @@ def get_route():
 
     try:
         # 경로 계산
-        path_nodes, path_length = cch.query(start_id, end_id)
+        path_length, path_nodes = cch.query(start_id, end_id)
 
         # 시작/도착지 좌표만 추출
        # 좌표 리스트 생성 (location 필드에서 직접 추출)
