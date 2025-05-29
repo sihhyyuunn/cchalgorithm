@@ -128,7 +128,7 @@ app = Flask(__name__, template_folder="templates")
 def load_graph_with_location(path="graph_with_location.pkl"):
     with open(path, "rb") as f:
         return pickle.load(f)
-
+G = load_graph_with_location()
 # ===================================
 # shortcuts 및 order 불러오기
 # ===================================
