@@ -1,4 +1,3 @@
-# app.py
 from flask import Flask, render_template, request, jsonify
 import pickle
 import networkx as nx
@@ -75,9 +74,14 @@ def get_route():
     try:
         path_nodes, path_length = cch.query(start_id, end_id)
 
-        # ✅ 여기 수정
-        coords = [location_map.get(n, [0, 0]) for n in path_nodes]
-
+        # ✅ 오류 방지를 위한 좌표 처리
+        coords = []
+        for n in path_nodes:
+            coord = location_map.get(n)
+            if isinstance(coord, (list, tuple)) and len(coord) == 2:
+                coords.append([float(coord[0]), float(coord[1])])
+            else:
+                coords.append([0.0, 0.0])  # fallback
 
         return jsonify({
             "start": start_id,
@@ -89,7 +93,6 @@ def get_route():
 
     except Exception as e:
         return jsonify({"error": f"서버 오류: {str(e)}"}), 500
-
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
