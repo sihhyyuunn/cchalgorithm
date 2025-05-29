@@ -165,12 +165,11 @@ def index():
     return render_template("index.html")
 
 @app.route('/route', methods=['POST'])
+@app.route('/route', methods=['POST'])
 def get_route():
     data = request.get_json()
     start_id = str(data.get("start")).strip()
     end_id = str(data.get("end")).strip()
-
-    print(f"🛰️ 요청 경로: {start_id} → {end_id}")
 
     if start_id not in G.nodes or end_id not in G.nodes:
         return jsonify({"error": f"입력한 콘존명이 그래프에 없습니다: {start_id} 또는 {end_id}"}), 400
@@ -178,32 +177,35 @@ def get_route():
     try:
         path_nodes, path_length = cch.query(start_id, end_id)
 
-        print("📌 경로 노드:", path_nodes)
+        # ✅ 대안 2: 출발지와 도착지 좌표만 사용
+        start_coord = location_map.get(start_id)
+        end_coord = location_map.get(end_id)
 
         coords = []
-        for n in path_nodes:
-            coord = location_map.get(n)
-            print(f"🧭 {n}: {coord} ({type(coord)})")  # 🔍 타입과 값 확인
-            if isinstance(coord, (list, tuple)) and len(coord) == 2:
-                coords.append([float(coord[0]), float(coord[1])])
-            else:
-                print(f"⚠️ 좌표 없음 또는 형식 이상: {n} → fallback 적용")
-                coords.append([0.0, 0.0])  # fallback
+
+        if isinstance(start_coord, (list, tuple)) and len(start_coord) == 2:
+            coords.append([float(start_coord[0]), float(start_coord[1])])
+        else:
+            coords.append([0.0, 0.0])  # fallback
+
+        if isinstance(end_coord, (list, tuple)) and len(end_coord) == 2:
+            coords.append([float(end_coord[0]), float(end_coord[1])])
+        else:
+            coords.append([0.0, 0.0])  # fallback
 
         return jsonify({
             "start": start_id,
             "end": end_id,
             "length": path_length,
-            "path": path_nodes,
+            "path": path_nodes,  # 그대로 보냄
             "coordinates": coords
         })
 
     except Exception as e:
-        error_trace = traceback.format_exc()
-        print("❌ 예외 발생:\n", error_trace)
-        return jsonify({
-            "error": f"서버 내부 오류 발생:\n{error_trace}"
-        }), 500
+        import traceback
+        print("❌ 예외 발생:\n", traceback.format_exc())
+        return jsonify({"error": f"서버 오류: {str(e)}"}), 500
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
