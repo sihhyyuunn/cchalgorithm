@@ -180,15 +180,17 @@ def get_route():
         path_nodes, path_length = cch.query(start_id, end_id)
 
         # 시작/도착지 좌표만 추출
-       coords = []
+       # 좌표 리스트 생성 (location 필드에서 직접 추출)
+        coords = []
         for node in [start_id, end_id]:
-            try:
-                lat = G.nodes[node]['lat']
-                lng = G.nodes[node]['lng']
-                coords.append([lat, lng])
-            except KeyError:
-                print(f"[❗경고] '{node}'의 위경도 정보 없음 → 기본값 사용")
+            info = G.nodes[node]
+            loc = info.get("location")
+            if isinstance(loc, (tuple, list)) and len(loc) == 2:
+                coords.append([float(loc[0]), float(loc[1])])
+            else:
+                print(f"[❗경고] {node}의 좌표 정보 없음 → 기본값 사용")
                 coords.append([0.0, 0.0])
+
 
         return jsonify({
             "start": start_id,
